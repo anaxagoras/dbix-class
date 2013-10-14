@@ -5,6 +5,25 @@ use 5.008001;
 use inc::Module::Install 1.06;
 
 ##
+## TEMPORARY (and non-portable)
+## Get the dq stuff
+##
+`rm -rf t/dqlib`;
+`mkdir t/dqlib`;
+for (
+  [ 'Data-Query' => 'master' ],
+  [ 'SQL-Abstract' => 'dq' ],
+) {
+  my $tdir = '/tmp/dqlib_tmp_clone';
+
+  `rm -rf $tdir`;
+  `GIT_SSH=maint/careless_ssh.bash git clone git://git.shadowcat.co.uk/dbsrgits/$_->[0] $tdir`;
+  `git archive --format=tar --remote=file://$tdir origin/$_->[1] lib/ | tar --strip-components=1 -xC t/dqlib`;
+  `rm -rf $tdir`;
+}
+`cpanm SQL::ReservedWords 2>&1`;
+
+##
 ## DO NOT USE THIS HACK IN YOUR DISTS!!! (it makes #toolchain sad)
 ##
 # get cpanX --installdeps . to behave in a checkout (most users do not expect
