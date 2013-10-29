@@ -610,6 +610,40 @@ The dirty way:
         return $self->result_source->schema->resultset('Server')->search({ ... });
     };
 
+=item How do I handle an unreliable database connection?
+
+Use a BlockRunner (L<Class::Storage::BlockRunner>).
+
+A BlockRunner will allow you to execute a particular block of code until it
+succeeds or until a maximum number of retries (default 20) has been reached.
+It is the magic behind L<DBIx::Class::Schema/txn_do>, and is called generically
+for most database actions behind the scenes, but you can use it yourself to
+catch connection errors.  If the C<retry_handler> returns false, the block will
+not try again, and an exception will be thrown.
+
+    my $album = $schema->resultset('Album')->find(14);
+    $album->set_column('title', 'Presence');
+
+    DBIx::Class::Storage::BlockRunner->new(
+        storage => $schema->storage,
+        run_code => sub { 
+            $album->update;
+        },
+        wrap_txn => 0,
+        retry_handler => sub {
+            if ($_[0]->storage->connected) {
+                # It's a non-connection error of some kind; don't retry.
+                return 0;
+            }
+            else {
+                # Wait two seconds and try again.
+                sleep 2;
+                return 1;
+            }
+        },
+        max_retried_count => 100,                   # abort after 100 retries
+    )->run;
+
 =back
 
 =head2 Notes for CDBI users
