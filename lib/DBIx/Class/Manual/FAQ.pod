@@ -618,8 +618,9 @@ A BlockRunner will allow you to execute a particular block of code until it
 succeeds or until a maximum number of retries (default 20) has been reached.
 It is the magic behind L<DBIx::Class::Schema/txn_do>, and is called generically
 for most database actions behind the scenes, but you can use it yourself to
-catch connection errors.  If the C<retry_handler> returns false, the block will
-not try again, and an exception will be thrown.
+catch connection errors.  If the C<retry_handler> returns false or if
+C<max_retried_count> failed attempts are made, the block will not try again, and
+an exception will be thrown.
 
     my $album = $schema->resultset('Album')->find(14);
     $album->set_column('title', 'Presence');
